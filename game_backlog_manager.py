@@ -491,6 +491,9 @@ class Backlog:
         # Sort the games using the defined sort key
         self._games.sort(key=get_sort_key, reverse=reverse)
 
+        # Save the new order to the file
+        self.save_to_file(self.filename)
+
 
 class User:
     """Represents a user of the video game backlog application.
