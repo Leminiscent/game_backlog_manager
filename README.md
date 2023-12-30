@@ -1,41 +1,46 @@
 # Game Backlog Manager
 
-The Game Backlog Manager is a Python application designed to help users manage their collection of video games. It offers a range of functionalities including the ability to add, remove, sort, and display games in the backlog, as well as manage user profiles. This document serves as a guide to understand and use the application effectively.
+The Game Backlog Manager is a comprehensive Python application designed for gamers to manage their collection of video games effectively. With user-friendly functionalities to add, remove, sort, and display games, this tool simplifies backlog management. It also offers robust user profile management, allowing for a tailored experience.
 
-## Features
+## Key Features
 
-- **User Management**: Create new user profiles, load existing profiles, and switch between users.
-- **Backlog Management**: Add and remove games from your backlog, with attributes like title, genre, release year, and more.
-- **Game Sorting**: Sort games in your backlog based on various criteria like title, genre, release year, etc.
-- **Data Persistence**: Save and load your game backlog to and from files, ensuring data is stored between sessions.
+- **User Management**: Efficiently create, load, and switch between user profiles.
+- **Backlog Handling**: Add games to your backlog with detailed attributes like title, genre, release year, etc. Remove games as needed.
+- **Advanced Game Sorting**: Sort your games based on various attributes such as title, genre, or release year for easier management.
+- **Persistent Data Storage**: Your game backlog is saved in files, ensuring that your data is preserved between application sessions.
 
-## Classes
+## Core Classes
 
-- `Game`: Represents a single video game, including attributes like title, genre, release year, date added, time to beat, and priority.
-- `Backlog`: Manages a collection of games for a user, with functionalities to add, remove, and sort games, as well as save and load from files.
-- `User`: Represents a user of the application, managing their game backlog.
+- `Game`: Models a video game with comprehensive attributes including title, genre, release year, date of addition to the backlog, estimated completion time, and priority.
+- `Backlog`: A robust manager for a user's game collection, with capabilities to add, remove, sort games, and handle file-based data storage and retrieval.
+- `User`: Represents an application user, managing their personalized game backlog.
 
-## Exceptions
+## Exception Handling
 
-- `ValidationError`: Base class for exceptions related to validation errors.
-- `InvalidGameDataError`: Raised for errors in game data structure or content.
-- `FileIOError`: Raised for errors during file I/O operations.
-- `InvalidDateError`: Raised for errors related to date format or value.
-- `DuplicateUsernameError`: Raised when a duplicate username is encountered.
+- `ValidationError`: A generic exception class for various validation errors.
+- `InvalidGameDataError`: Triggered by inconsistencies or errors in the structure or content of game data.
+- `FileIOError`: Handles errors related to file input/output operations, ensuring data integrity.
+- `InvalidDateError`: Catches errors related to improper date formats or values.
+- `DuplicateUsernameError`: Alerts when there's an attempt to create a user with a duplicate username.
 
-## Main Functionality
+## Main Application Flow
 
-The application's primary interface is handled through the `main()` function. This function facilitates user interaction with the application, allowing them to perform actions like creating or loading user profiles and managing their game backlog. The application runs in a continuous loop, providing a menu-driven interface for easy navigation.
+The `main()` function serves as the gateway to the application, offering a user-friendly, menu-driven interface. It enables users to engage with various aspects of the app, such as managing user profiles and their game backlog. The application operates in a loop, providing continuous access to its features.
 
-## Usage
+## Getting Started
 
-To use the Game Backlog Manager:
+To engage with the Game Backlog Manager:
 
-1. Start the application. The main menu will be displayed.
-2. Choose to create a new user, load an existing user, or exit the program.
-3. Once a user profile is active, various options to manage the game backlog will be available:
-    - Add a game
-    - Remove a game
-    - Sort and display all games
-    - Additional user management options like listing existing users, deleting a user, or switching users
-4. The application will continue running until you choose to exit.
+1. **Launch the Application**: Start the app to access the main menu.
+2. **User Profile Options**: Choose to either create a new user profile, load an existing one, or exit.
+3. **Backlog Management**: Once logged in, you'll have several options:
+    - Add new games to your backlog.
+    - Remove games from your backlog.
+    - Sort and view all games in your backlog.
+    - Manage users - list, delete, or switch between user profiles.
+4. **Continuous Access**: The app remains operational until you opt to exit.
+
+## Updates and Enhancements
+
+- **Automated Game Data Retrieval**: Integration with the IGDB API is planned, enabling automatic filling of game data.
+- **Graphical User Interface**: A Flask-based GUI is in development to provide an even more intuitive and visually appealing user experience.

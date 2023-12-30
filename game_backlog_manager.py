@@ -1,4 +1,4 @@
-# V2 To-do's (1) Format backlog list output with tabulate (2) Apply pyfiglet to opening message (3) Autofill game data with IGDB API (4) Implement a GUI with Flask
+# V2 To-do's: - Autofill game data with IGDB API - Implement a GUI with Flask
 """
 This module implements a Game Backlog Manager, allowing users to manage their video game collection.
 It provides functionalities to add, remove, sort, and display games in the backlog, along with user management capabilities.
@@ -17,17 +17,31 @@ Exceptions:
 
 Functions:
     main(): The main function of the script, handling the primary user interface.
-    optional_int_input(prompt, min_value): Prompts for optional integer input.
+    create_new_user(): Handle new user creation process.
+    load_existing_user(): Handle existing user loading process.
+    manage_backlog(user): Manage the game backlog for a user.
+    add_game_to_backlog(user): Add a new game to a user's backlog.
+    remove_game_from_backlog(user): Remove a game from a user's backlog.
+    display_and_sort_backlog(user): Display and sort all games in a user's backlog.
+    optional_int_input(prompt, min_value=None): Prompts for optional integer input.
     optional_string_input(prompt): Prompts for optional string input.
     optional_time_input(prompt): Prompts for time input in HH:MM format.
     mandatory_string_input(prompt): Prompts for mandatory string input.
-    create_new_user(): Handle new user creation process
-    load_existing_user(): Handle existing user loading process
-    manage_backlog(user): Manage the game backlog for a user.
+
+Imported modules:
+    - dataclasses: For creating data classes.
+    - typing: For type hints.
+    - tabulate: For formatting tables in the console.
+    - datetime: For handling dates.
+    - pyfiglet: For ASCII art text.
+    - json: For JSON file handling.
+    - os: For file and directory operations.
 """
 from dataclasses import dataclass, field
 from typing import List, Optional
+from tabulate import tabulate
 from datetime import date
+import pyfiglet
 import json
 import os
 
@@ -47,18 +61,20 @@ def main():
     """
     # Main application loop
     running = True
+    print(pyfiglet.figlet_format("Welcome to the Game Backlog Manager!", font="slant"))
+    print("\n" + "-" * 80 + "\n")
     while running:
-        print("Welcome to the Game Backlog Manager!")
-
         # User management loop
         user = None
         while user is None:
             choice = input(
                 "Do you want to create a new user, load an existing user, or exit the program? [new/load/exit]: "
             )
+            print("\n" + "-" * 80 + "\n")
             # Validate user choice
             if choice.lower() not in ["new", "load", "exit"]:
                 print("Invalid choice, please enter 'new', 'load', or 'exit'.")
+                print("\n" + "-" * 80 + "\n")
                 continue
 
             # Create a new user profile
@@ -72,6 +88,7 @@ def main():
             # Exit the application
             elif choice.lower() == "exit":
                 print("Goodbye!")
+                print("\n" + "-" * 80 + "\n")
                 running = False
                 break
 
@@ -121,13 +138,16 @@ class DuplicateUsernameError(ValidationError):
 class Game:
     """Represents a single video game with various attributes.
 
+    This class models a video game with its title, genre, release year, date added to the backlog,
+    estimated time to beat, and a priority level. It also includes validation for each attribute to ensure data integrity.
+
     Attributes:
         title (str): The title of the game.
-        genre (str): The genre of the game.
-        release_year (int): The year the game was released.
+        genre (Optional[str]): The genre of the game. Defaults to None if not specified.
+        release_year (Optional[int]): The year the game was released. Defaults to None if not specified.
         date_added (date): The date the game was added to the backlog. Defaults to today's date.
-        time_to_beat (tuple[int, int]): The estimated time to beat the game in hours and minutes.
-        priority (int): The priority of the game in the backlog.
+        time_to_beat (Optional[tuple[int, int]]): The estimated time to beat the game in hours and minutes. Defaults to None if not specified.
+        priority (Optional[int]): The priority of the game in the backlog. Defaults to None if not specified.
     """
 
     title: str
@@ -139,6 +159,7 @@ class Game:
 
     def __post_init__(self):
         """Post-initialization processing to validate the data of the Game instance."""
+
         # Validate title as a non-empty string
         if not self.title or not isinstance(self.title, str):
             raise InvalidGameDataError("Title must be a non-empty string.")
@@ -184,6 +205,9 @@ class Game:
     def to_dict(self) -> dict:
         """Converts the Game instance into a dictionary for serialization.
 
+        This method facilitates the serialization of a Game object into a dictionary,
+        which is useful for storing the game data in a file.
+
         Returns:
             dict: A dictionary representation of the Game instance.
         """
@@ -196,6 +220,9 @@ class Game:
     @staticmethod
     def from_dict(data: dict) -> "Game":
         """Deserialize a dictionary into a Game instance, with validation.
+
+        This static method creates a Game object from a dictionary representation, ensuring
+        that the data adheres to the expected structure and types.
 
         Args:
             data (dict): The dictionary containing game data.
@@ -248,9 +275,10 @@ class Game:
 
 class Backlog:
     """
-    Represents a collection of games in a user's backlog.
+    Manages a collection of games for a user.
 
-    This class manages operations such as adding, removing, saving, and loading games.
+    This class provides functionalities for adding, removing, saving, and loading games in a user's backlog.
+    It supports operations like serialization of games to a file and deserialization from a file, ensuring persistent storage.
 
     Attributes:
         games (List[Game]): A list of Game instances in the backlog.
@@ -274,9 +302,11 @@ class Backlog:
     def __init__(self, filename: str, games: Optional[List[Game]] = None):
         """Initialize a new backlog instance.
 
+        The constructor initializes the backlog with an optional list of games and a filename for saving and loading.
+
         Args:
             filename (str): The filename to use for saving and loading the backlog.
-            games (Optional[List[Game]]): A list of games to add to the backlog.
+            games (Optional[List[Game]]): A list of games to add to the backlog, defaults to an empty list.
         """
         self.games = games if games is not None else []
         self.file_loaded = False
@@ -285,8 +315,10 @@ class Backlog:
     def __str__(self) -> str:
         """Return a string representation of the backlog.
 
+        Provides a human-readable list of game titles in the backlog.
+
         Returns:
-            str: A string that lists the titles of all games in the backlog.
+            str: A string listing the titles of all games in the backlog.
         """
         if not self._games:
             return "Backlog: [Empty]"
@@ -353,7 +385,7 @@ class Backlog:
     def remove_game(self, game: Game):
         """Remove a game from the backlog.
 
-        If the game is not found in the backlog, a message is printed.
+        Removes a specified game from the backlog. If the game is not found, a message is displayed.
 
         Args:
             game (Game): The game to be removed from the backlog.
@@ -362,10 +394,13 @@ class Backlog:
             self._games.remove(game)
         except ValueError:
             print(f"Game '{game.title}' not found in backlog.")
+            print("\n" + "-" * 80 + "\n")
         self.save_to_file(self.filename)  # Automatically save after removing
 
     def game_count(self) -> int:
         """Return the number of games in the backlog.
+
+        Provides the total count of games currently stored in the backlog.
 
         Returns:
             int: The total number of games in the backlog.
@@ -374,6 +409,8 @@ class Backlog:
 
     def save_to_file(self, filename: str):
         """Save the backlog to a JSON file.
+
+        Serializes the backlog to a JSON file. Each game in the backlog is converted into a dictionary before serialization.
 
         Args:
             filename (str): The filename for the file where the backlog will be saved.
@@ -389,6 +426,8 @@ class Backlog:
 
     def load_from_file(self, filename: str):
         """Load the backlog from a JSON file.
+
+        Deserializes the backlog from a JSON file, creating Game instances for each game record in the file.
 
         Args:
             filename (str): The filename of the file from which to load the backlog.
@@ -430,9 +469,12 @@ class Backlog:
         ]:
             raise ValueError(f"Invalid sorting criterion: {criterion}")
 
+        # Define a helper function to get the sort key based on the criterion
         def get_sort_key(game):
             value = getattr(game, criterion)
+            # Handle cases where the attribute may be None or require special formatting
             if value is None:
+                # Provide default values for sorting when attribute is None
                 if criterion in ["title", "genre"]:
                     return ""
                 elif criterion in ["release_year", "priority"]:
@@ -441,19 +483,21 @@ class Backlog:
                     return (0, 0)
                 else:
                     return value  # For 'date_added' and other non-string, non-numeric attributes
-
             if isinstance(value, str):
                 return value.lower()
             else:
                 return value
 
+        # Sort the games using the defined sort key
         self._games.sort(key=get_sort_key, reverse=reverse)
 
 
 class User:
     """Represents a user of the video game backlog application.
 
-    This class manages user information, including username and the associated game backlog.
+    Manages user information, including the username and associated game backlog. This class is responsible for
+    operations such as loading and saving the user's backlog, as well as user-specific functionalities like
+    listing and deleting users.
 
     Attributes:
         username (str): The username of the user.
@@ -462,6 +506,9 @@ class User:
 
     def __init__(self, username: str):
         """Initialize a new user instance and load their backlog if it exists.
+
+        Creates a new user with a specified username. It initializes a new backlog for the user and loads it
+        if a corresponding backlog file exists.
 
         Args:
             username (str): The username of the user.
@@ -472,11 +519,11 @@ class User:
         self.username = username
         self.filename = f"{self.username}_backlog.json"
         self.backlog = Backlog(filename=self.filename)
-        # Check if the backlog file already exists to load it; otherwise, create a new one
+        # Attempt to load existing backlog, or create a new one if the file doesn't exist
         if os.path.exists(self.filename):
             self.backlog.load_from_file(self.filename)
         else:
-            self.save_backlog()  # Save the backlog when creating a new user
+            self.save_backlog()  # Create a new backlog file for new users
 
     def __str__(self) -> str:
         """Return a string representation of the user.
@@ -507,11 +554,13 @@ class User:
     def username(self, value: str):
         """Set the username for the user.
 
+        Validates that the username is a non-empty string.
+
         Args:
             value (str): The new username for the user.
 
         Raises:
-            ValidationError: If the username is empty, not a string, or already exists.
+            ValidationError: If the username is empty or not a string.
         """
         if not value or not isinstance(value, str):
             raise ValidationError("Username must be a non-empty string.")
@@ -530,8 +579,10 @@ class User:
     def backlog(self, value: Backlog):
         """Set the backlog for the user.
 
+        Validates that the provided value is an instance of Backlog.
+
         Args:
-            value (Backlog): The backlog to be associated with the user.
+            value (Backlog): The new backlog to be associated with the user.
 
         Raises:
             ValidationError: If the provided value is not an instance of Backlog.
@@ -541,62 +592,149 @@ class User:
         self._backlog = value
 
     def save_backlog(self):
-        """Save the user's backlog to a file."""
+        """Save the user's backlog to a file.
+
+        Writes the user's backlog data to a JSON file named after the username.
+        """
         # The filename is derived from the username, ensuring each user has a unique backlog file.
         filename = f"{self.username}_backlog.json"
         self.backlog.save_to_file(filename)
 
     def load_backlog(self):
-        """Load the user's backlog from a file."""
+        """Load the user's backlog from a file.
+
+        Loads the user's backlog data from a JSON file named after the username.
+        """
         # Load the backlog from the file named after the user.
         filename = f"{self.username}_backlog.json"
         self.backlog.load_from_file(filename)
 
     @staticmethod
     def list_users():
-        """Lists all existing users by scanning for user files."""
-        # User files are identified by the '_backlog.json' suffix in the current directory.
+        """List all existing users based on their backlog files.
+
+        Scans the current directory for backlog files and extracts usernames from them.
+
+        Returns:
+            List[str]: A list of usernames based on existing backlog files.
+        """
         user_files = [f for f in os.listdir() if f.endswith("_backlog.json")]
         users = sorted(
             [os.path.splitext(file)[0].replace("_backlog", "") for file in user_files]
         )
+
+        if users:
+            print(
+                tabulate(
+                    [[i + 1, user] for i, user in enumerate(users)],
+                    headers=["No.", "Username"],
+                    tablefmt="fancy_grid",
+                )
+            )
+            print("\n" + "-" * 80 + "\n")
+        else:
+            print("No users available.")
+            print("\n" + "-" * 80 + "\n")
+
         return users
 
     @staticmethod
-    def delete_user(username):
-        """Deletes a user's file.
+    def delete_user():
+        """Delete a user's file after selection from a list of users.
 
-        Args:
-            username (str): The username of the user to be deleted.
+        Prompts the user to select a username from a list and deletes the corresponding backlog file.
 
         Returns:
             bool: True if the user was successfully deleted, False otherwise.
         """
-        # Removes the file associated with the specified username.
-        filename = f"{username}_backlog.json"
-        if os.path.exists(filename):
-            os.remove(filename)
-            return True
-        return False
+        users = User.list_users()
+        if not users:
+            print("No users available to delete.")
+            print("\n" + "-" * 80 + "\n")
+            return False
+
+        while True:
+            choice = input(
+                "Select the number of the user to delete (or enter '0' to cancel): "
+            )
+            print("\n" + "-" * 80 + "\n")
+
+            if choice == "0":
+                return False
+
+            if not choice.isdigit():
+                print(
+                    "Invalid selection. Please enter a valid number or '0' to cancel."
+                )
+                print("\n" + "-" * 80 + "\n")
+                continue
+
+            choice = int(choice)
+
+            if choice < 1 or choice > len(users):
+                print("Invalid selection. Please try again.")
+                print("\n" + "-" * 80 + "\n")
+                continue
+
+            username_to_delete = users[choice - 1]
+            filename = f"{username_to_delete}_backlog.json"
+            if os.path.exists(filename):
+                os.remove(filename)
+                print(f"User {username_to_delete}'s profile deleted.")
+                print("\n" + "-" * 80 + "\n")
+                return True
+            else:
+                print("Error: Could not delete the user profile.")
+                print("\n" + "-" * 80 + "\n")
+                return False
 
     @staticmethod
     def switch_user(current_username):
-        """Switches the active user."""
+        """
+        Switches the active user after selection from a list of users.
+
+        Args:
+            current_username (str): The username of the current active user.
+
+        Returns:
+            User or None: The new User object if switched, None otherwise.
+        """
         users = User.list_users()
         if len(users) <= 1:
             print("No other users to switch to.")
+            print("\n" + "-" * 80 + "\n")
             return None
 
-        print("Existing users: " + ", ".join(users))
-        new_username = input("Enter the username to switch to: ")
-        if new_username == current_username:
-            print("You are already logged in as this user.")
-            return None
-        elif new_username in users:
-            return User(new_username)
-        else:
-            print("User not found.")
-            return None
+        while True:
+            choice = input(
+                "Select the number of the user to switch to (or enter '0' to cancel): "
+            )
+            print("\n" + "-" * 80 + "\n")
+
+            if choice == "0":
+                return None
+
+            if not choice.isdigit():
+                print(
+                    "Invalid selection. Please enter a valid number or '0' to cancel."
+                )
+                print("\n" + "-" * 80 + "\n")
+                continue
+
+            choice = int(choice)
+
+            if choice < 1 or choice > len(users):
+                print("Invalid selection. Please try again.")
+                print("\n" + "-" * 80 + "\n")
+                continue
+
+            new_username = users[choice - 1]
+            if new_username == current_username:
+                print("You are already logged in as this user.")
+                print("\n" + "-" * 80 + "\n")
+                continue
+            else:
+                return User(new_username)
 
 
 def create_new_user():
@@ -612,47 +750,69 @@ def create_new_user():
     while True:
         try:
             username = input("Enter a new username: ")
+            print("\n" + "-" * 80 + "\n")
             if not username:
                 raise ValidationError("Username cannot be empty.")
             filename = f"{username}_backlog.json"
             if os.path.exists(filename):
                 print("Username already exists. Please try a different username.")
+                print("\n" + "-" * 80 + "\n")
                 continue
             print(f"New user profile created for {username}.")
+            print("\n" + "-" * 80 + "\n")
             return User(username)
         except ValidationError as e:
             print(e)
+            print("\n" + "-" * 80 + "\n")
 
 
 def load_existing_user():
     """
     Load an existing user profile.
 
-    Prompts the user to input their username, and attempts to load the corresponding user profile from a file.
-    If the profile exists and is successfully loaded, the user object is returned.
+    Presents a numbered list of existing users and prompts the user to select one by number.
+    Attempts to load the corresponding user profile from a file.
 
     Returns:
         User: The loaded user object, or None if loading failed.
     """
     users = User.list_users()
-    if users:
-        print("Existing users: " + ", ".join(users))
-    else:
+    if not users:
         print("No users available to load.")
+        print("\n" + "-" * 80 + "\n")
         return None
-    username = input("Enter name of user to load: ")
-    filename = f"{username}_backlog.json"
-    if not os.path.exists(filename):
-        print("User profile not found. Please try again or create a new user.")
-        return None
-    else:
-        user = User(username)
+
+    while True:
+        choice = input(
+            "Select the number of the user to load (or enter '0' to cancel): "
+        )
+        print("\n" + "-" * 80 + "\n")
+
+        if choice == "0":
+            return None
+
+        if not choice.isdigit():
+            print("Invalid selection. Please enter a valid number or '0' to cancel.")
+            print("\n" + "-" * 80 + "\n")
+            continue
+
+        choice = int(choice)
+
+        if choice < 1 or choice > len(users):
+            print("Invalid selection. Please try again.")
+            print("\n" + "-" * 80 + "\n")
+            continue
+
+        selected_username = users[choice - 1]
+        user = User(selected_username)
         try:
             user.load_backlog()
             print(f"Welcome back, {user.username}!")
+            print("\n" + "-" * 80 + "\n")
             return user
         except FileIOError as e:
             print(f"Error loading user profile: {e}")
+            print("\n" + "-" * 80 + "\n")
             return None
 
 
@@ -668,140 +828,249 @@ def manage_backlog(user):
     """
     # Main menu loop for backlog management
     while True:
-        print("\n--- Main Menu ---")
-        print("1. Add a game to the backlog")
-        print("2. Remove a game from the backlog")
-        print("3. Sort and show all games in the backlog")
-        print("4. List existing users")
-        print("5. Delete a user")
-        print("6. Switch user")
-        print("7. Exit")
+        print(
+            tabulate(
+                [
+                    ["--- Main Menu ---"],
+                    ["1. Add a game to the backlog"],
+                    ["2. Remove a game from the backlog"],
+                    ["3. Sort and show all games in the backlog"],
+                    ["4. List existing users"],
+                    ["5. Delete a user"],
+                    ["6. Switch user"],
+                    ["7. Exit"],
+                ],
+                tablefmt="fancy_grid",
+            )
+        )
+        print("\n" + "-" * 80 + "\n")
         choice = input("Enter your choice: ")
+        print("\n" + "-" * 80 + "\n")
 
         # Each 'if' block corresponds to a different menu option
         if choice == "1":
-            # Add a game to the backlog
-            title = mandatory_string_input("Enter game title: ")
-            genre = optional_string_input("Enter game genre (or leave blank): ")
-            release_year = optional_int_input(
-                "Enter release year (or leave blank): ", min_value=1950
-            )
-            date_added = date.today()
-            time_to_beat = optional_time_input(
-                "Enter time to beat as HH:MM (or leave blank): "
-            )
-            priority = optional_int_input(
-                "Enter priority (or leave blank): ", min_value=0
-            )
-            game = Game(
-                title,
-                genre,
-                release_year,
-                date_added,
-                time_to_beat,
-                priority,
-            )
-            user.backlog.add_game(game)
-            print(f"'{title}' added to your backlog.")
+            add_game_to_backlog(user)
 
         elif choice == "2":
-            # Remove a game from the backlog
-            if user.backlog.game_count() == 0:
-                print("Your backlog is empty.")
-            else:
-                title = input("Enter the title of the game to remove: ")
-                game_to_remove = None
-                for game in user.backlog.games:
-                    if game.title.lower() == title.lower():
-                        game_to_remove = game
-                        break
-
-                if game_to_remove:
-                    user.backlog.remove_game(game_to_remove)
-                    print(f"Game '{title}' removed from your backlog.")
-                else:
-                    print("Game not found in backlog.")
+            remove_game_from_backlog(user)
 
         elif choice == "3":
-            # Display and sort all games in the backlog
-            if user.backlog.game_count() == 0:
-                print("Your backlog is empty.")
-            else:
-                # Choose sorting criterion
-                print("\nSort by:")
-                print("1. Title")
-                print("2. Genre")
-                print("3. Release Year")
-                print("4. Priority")
-                print("5. Time to Beat")
-                print("6. Date Added")
-                sort_choice = input("Enter your choice for sorting: ")
-                sort_criterion = {
-                    "1": "title",
-                    "2": "genre",
-                    "3": "release_year",
-                    "4": "priority",
-                    "5": "time_to_beat",
-                    "6": "date_added",
-                }.get(
-                    sort_choice, "title"
-                )  # default to title if invalid choice
-
-                # Sort and display games
-                user.backlog.sort_backlog(criterion=sort_criterion)
-                print("\nGames in your backlog:")
-                for game in user.backlog.games:
-                    time_to_beat_str = (
-                        f"{game.time_to_beat[0]}h{game.time_to_beat[1]}m"
-                        if game.time_to_beat is not None
-                        else "N/A"
-                    )
-                    print(
-                        f"- {game.title} (Genre: {game.genre}, Release Year: {game.release_year}, Time to Beat: {time_to_beat_str}, Priority: {game.priority}, Date Added: {game.date_added})"
-                    )
+            display_and_sort_backlog(user)
 
         elif choice == "4":
             # List all existing users
-            users = User.list_users()
-            print("Existing users: " + ", ".join(users))
+            User.list_users()
 
         elif choice == "5":
             # Delete a user
-            users = User.list_users()
-            if users:
-                print("Existing users: " + ", ".join(users))
-                username_to_delete = input("Enter the username of the user to delete: ")
-
-                if username_to_delete in users:
-                    user_deleted = User.delete_user(username_to_delete)
-                    if user_deleted:
-                        print(f"User {username_to_delete}'s profile deleted.")
-                        if user and user.username == username_to_delete:
-                            print(
-                                "You have deleted your active profile. Returning to the main screen."
-                            )
-                            return True, None
-                    else:
-                        print("Error: Could not delete the user profile.")
-                else:
-                    print("User not found.")
-            else:
-                print("No users available to delete.")
+            user_deleted = User.delete_user()
+            if user_deleted:
+                # Check if there are any users left after deletion
+                if not User.list_users():
+                    print("Returning to the user management screen.")
+                    print("\n" + "-" * 80 + "\n")
+                    return True, None
 
         elif choice == "6":
             # Switch to a different user
-            switched_user = User.switch_user(user.username)
+            switched_user = user.switch_user(user.username)
             if switched_user:
                 user = switched_user
                 print(f"Switched to user {user.username}")
+                print("\n" + "-" * 80 + "\n")
 
         elif choice == "7":
             # Exit the application
             print("Goodbye!")
+            print("\n" + "-" * 80 + "\n")
             return False, user
 
         else:
             print("Invalid choice, please try again.")
+            print("\n" + "-" * 80 + "\n")
+
+
+def add_game_to_backlog(user):
+    """
+    Add a game to the user's backlog.
+
+    Prompts the user for details about the game and then adds it to their backlog.
+    The game details include title, genre, release year, time to beat, and priority.
+
+    Args:
+        user (User): The user to whom the game will be added.
+    """
+    title = mandatory_string_input("Enter game title: ")
+    print("\n" + "-" * 80 + "\n")
+    genre = optional_string_input("Enter game genre (or leave blank): ")
+    print("\n" + "-" * 80 + "\n")
+    release_year = optional_int_input(
+        "Enter release year (or leave blank): ", min_value=1950
+    )
+    print("\n" + "-" * 80 + "\n")
+    date_added = date.today()
+    time_to_beat = optional_time_input("Enter time to beat as HH:MM (or leave blank): ")
+    print("\n" + "-" * 80 + "\n")
+    priority = optional_int_input("Enter priority (or leave blank): ", min_value=0)
+    print("\n" + "-" * 80 + "\n")
+    game = Game(
+        title,
+        genre,
+        release_year,
+        date_added,
+        time_to_beat,
+        priority,
+    )
+    user.backlog.add_game(game)
+    print(f"'{title}' added to your backlog.")
+    print("\n" + "-" * 80 + "\n")
+
+
+def remove_game_from_backlog(user):
+    """
+    Remove a game from the user's backlog.
+
+    Displays the current games in the user's backlog and allows the user to select a game to remove.
+
+    Args:
+        user (User): The user from whose backlog a game will be removed.
+    """
+    if user.backlog.game_count() == 0:
+        print("Your backlog is empty.")
+        print("\n" + "-" * 80 + "\n")
+    else:
+        games_table = [
+            [
+                idx,
+                game.title,
+                game.genre or "N/A",
+                game.release_year or "N/A",
+                f"{game.time_to_beat[0]}h{game.time_to_beat[1]}m"
+                if game.time_to_beat
+                else "N/A",
+                game.priority or "N/A",
+                game.date_added.isoformat()
+                if isinstance(game.date_added, date)
+                else game.date_added,
+            ]
+            for idx, game in enumerate(user.backlog.games, start=1)
+        ]
+
+        print(
+            tabulate(
+                games_table,
+                headers=[
+                    "No.",
+                    "Title",
+                    "Genre",
+                    "Release Year",
+                    "Time to Beat",
+                    "Priority",
+                    "Date Added",
+                ],
+                tablefmt="fancy_grid",
+            )
+        )
+        print("\n" + "-" * 80 + "\n")
+
+        # Ask user to select a game to remove
+        while True:
+            game_choice = input(
+                "Enter the number of the game to remove (or enter '0' to cancel): "
+            )
+            print("\n" + "-" * 80 + "\n")
+            if game_choice == "0":
+                break
+
+            if (
+                not game_choice.isdigit()
+                or int(game_choice) < 1
+                or int(game_choice) > user.backlog.game_count()
+            ):
+                print(
+                    "Invalid selection. Please enter a valid number or '0' to cancel."
+                )
+                print("\n" + "-" * 80 + "\n")
+                continue
+
+            game_to_remove = user.backlog.games[int(game_choice) - 1]
+            user.backlog.remove_game(game_to_remove)
+            print(f"'{game_to_remove.title}' removed from your backlog.")
+            print("\n" + "-" * 80 + "\n")
+            break
+
+
+def display_and_sort_backlog(user):
+    """
+    Display and sort all games in the user's backlog.
+
+    Allows the user to view and sort their backlog based on various criteria such as title, genre, etc.
+
+    Args:
+        user (User): The user whose backlog will be displayed and sorted.
+    """
+    if user.backlog.game_count() == 0:
+        print("Your backlog is empty.")
+        print("\n" + "-" * 80 + "\n")
+    else:
+        # Choose sorting criterion
+        sort_menu = [
+            ["1. Title"],
+            ["2. Genre"],
+            ["3. Release Year"],
+            ["4. Priority"],
+            ["5. Time to Beat"],
+            ["6. Date Added"],
+        ]
+        print(tabulate(sort_menu, headers=["Sort by:"], tablefmt="fancy_grid"))
+        print("\n" + "-" * 80 + "\n")
+        sort_choice = input("Enter your choice for sorting: ")
+        print("\n" + "-" * 80 + "\n")
+        sort_criterion = {
+            "1": "title",
+            "2": "genre",
+            "3": "release_year",
+            "4": "priority",
+            "5": "time_to_beat",
+            "6": "date_added",
+        }.get(
+            sort_choice, "title"
+        )  # default to title if invalid choice
+
+        # Sort and display games
+        user.backlog.sort_backlog(criterion=sort_criterion)
+        games_table = [
+            [
+                game.title,
+                game.genre or "N/A",
+                game.release_year or "N/A",
+                f"{game.time_to_beat[0]}h{game.time_to_beat[1]}m"
+                if game.time_to_beat
+                else "N/A",
+                game.priority or "N/A",
+                game.date_added.isoformat()
+                if isinstance(game.date_added, date)
+                else game.date_added,
+            ]
+            for game in user.backlog.games
+        ]
+
+        # Display sorted games
+        print(
+            tabulate(
+                games_table,
+                headers=[
+                    "Title",
+                    "Genre",
+                    "Release Year",
+                    "Time to Beat",
+                    "Priority",
+                    "Date Added",
+                ],
+                tablefmt="fancy_grid",
+            )
+        )
+        print("\n" + "-" * 80 + "\n")
 
 
 def optional_int_input(prompt, min_value=None):
@@ -826,10 +1095,12 @@ def optional_int_input(prompt, min_value=None):
             value = int(input_str)
             if min_value is not None and value < min_value:
                 print(f"Please enter a number greater than or equal to {min_value}.")
+                print("\n" + "-" * 80 + "\n")
                 continue
             return value
         else:
             print("Invalid input. Please enter a valid integer or leave blank.")
+            print("\n" + "-" * 80 + "\n")
             continue
 
 
@@ -868,6 +1139,7 @@ def optional_time_input(prompt):
         parts = input_str.split(":")
         if len(parts) != 2:
             print("Invalid format. Please enter a valid time (HH:MM) or leave blank.")
+            print("\n" + "-" * 80 + "\n")
             continue
         try:
             hours, minutes = map(int, parts)
@@ -875,10 +1147,12 @@ def optional_time_input(prompt):
                 print(
                     "Invalid input. Please enter a valid time (HH:MM) or leave blank."
                 )
+                print("\n" + "-" * 80 + "\n")
                 continue
             return (hours, minutes)
         except ValueError:
             print("Invalid input. Please enter a valid time (HH:MM) or leave blank.")
+            print("\n" + "-" * 80 + "\n")
 
 
 def mandatory_string_input(prompt):
@@ -898,6 +1172,7 @@ def mandatory_string_input(prompt):
         if input_str:
             return input_str
         print("This field is required. Please enter a value.")
+        print("\n" + "-" * 80 + "\n")
 
 
 if __name__ == "__main__":
