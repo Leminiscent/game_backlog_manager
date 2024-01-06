@@ -1,6 +1,6 @@
 # Game Backlog Manager
 
-By Lemuel Nogueira
+**Author**: Lemuel Nogueira
 
 The Game Backlog Manager is a comprehensive Python application designed for gamers to manage their backlog of video games effectively. With user-friendly functionalities to add, remove, sort, and display games, this tool simplifies backlog management. It also offers robust user profile management, allowing for a tailored experience.
 
